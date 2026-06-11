@@ -37,7 +37,8 @@ jobs:
           model: openai/gpt-4o
           max-completion-tokens: 1000
           prompt: |
-            Analise o codigo Python abaixo e detecte pelo menos 2 code smells.
+            Analise o codigo Python abaixo procurando os code smells listados.
+            Informe claramente quando um code smell não estiver presente.
 
             Considere especialmente:
             - Long Method

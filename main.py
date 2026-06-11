@@ -23,6 +23,13 @@ class Customer:
     def __str__(self):
         return f"{self.name}\n{self.cpf}\n{self.email}\n{self.phone}\n{self.address}"
 
+    def get_contact_info(self):
+        return {
+            "name": self.name,
+            "cpf": self.cpf,
+            "email": self.email,
+        }
+
 
 class ReportService:
     def print_customer(self, customer):
@@ -114,17 +121,28 @@ class Order:
     def process_order(self):
         total = self.calculate_total()
 
-        self.payment.process()
-        print(self.customer)
+        self.process_payment(total)
+        self.print_customer_details()
         self._complete_order(total)
 
-    def _complete_order(self, total):
-        customer = self.customer
+    def process_payment(self, total):
+        self.payment.process()
 
-        self.services.notifications.send_order_confirmation(customer.email, total)
-        self.services.billing.generate_invoice(customer.name, customer.cpf, total)
+    def print_customer_details(self):
+        print(self.customer)
+
+    def _complete_order(self, total):
+        customer_info = self.customer.get_contact_info()
+        customer_name = customer_info["name"]
+
+        self.services.notifications.send_order_confirmation(
+            customer_info["email"], total
+        )
+        self.services.billing.generate_invoice(
+            customer_name, customer_info["cpf"], total
+        )
         self.services.inventory.update_inventory(self.items)
-        self.services.records.register_audit(customer.name, total)
+        self.services.records.register_audit(customer_name, total)
         self.services.billing.generate_financial_report(total)
-        self.services.records.save_history(customer.name, total)
-        self.services.notifications.notify_shipping(customer.name)
+        self.services.records.save_history(customer_name, total)
+        self.services.notifications.notify_shipping(customer_name)
