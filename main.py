@@ -30,27 +30,47 @@ class ReportService:
         print(customer.cpf)
 
 
-class OrderServices:
-    def send_email(self, email, total):
+class NotificationService:
+    def send_order_confirmation(self, email, total):
         print("Email enviado")
 
+    def notify_shipping(self, name):
+        print("Transportadora notificada")
+
+
+class BillingService:
     def generate_invoice(self, name, cpf, total):
         print("NF gerada")
-
-    def update_inventory(self, items):
-        print("Estoque atualizado")
-
-    def register_audit(self, name, total):
-        print("Auditoria registrada")
 
     def generate_financial_report(self, total):
         print("Relatório financeiro")
 
+
+class InventoryService:
+    def update_inventory(self, items):
+        print("Estoque atualizado")
+
+
+class OrderRecordService:
+    def register_audit(self, name, total):
+        print("Auditoria registrada")
+
     def save_history(self, name, total):
         print("Histórico salvo")
 
-    def notify_shipping(self, name):
-        print("Transportadora notificada")
+
+class OrderServices:
+    def __init__(
+        self,
+        notifications=None,
+        billing=None,
+        inventory=None,
+        records=None,
+    ):
+        self.notifications = notifications or NotificationService()
+        self.billing = billing or BillingService()
+        self.inventory = inventory or InventoryService()
+        self.records = records or OrderRecordService()
 
 
 class Payment(ABC):
@@ -94,17 +114,17 @@ class Order:
     def process_order(self):
         total = self.calculate_total()
 
-        # cálculo repetido
-        total2 = self.calculate_total()
-
         self.payment.process()
-
         print(self.customer)
+        self._complete_order(total)
 
-        self.services.send_email(self.customer.email, total)
-        self.services.generate_invoice(self.customer.name, self.customer.cpf, total)
-        self.services.update_inventory(self.items)
-        self.services.register_audit(self.customer.name, total)
-        self.services.generate_financial_report(total)
-        self.services.save_history(self.customer.name, total)
-        self.services.notify_shipping(self.customer.name)
+    def _complete_order(self, total):
+        customer = self.customer
+
+        self.services.notifications.send_order_confirmation(customer.email, total)
+        self.services.billing.generate_invoice(customer.name, customer.cpf, total)
+        self.services.inventory.update_inventory(self.items)
+        self.services.records.register_audit(customer.name, total)
+        self.services.billing.generate_financial_report(total)
+        self.services.records.save_history(customer.name, total)
+        self.services.notifications.notify_shipping(customer.name)
