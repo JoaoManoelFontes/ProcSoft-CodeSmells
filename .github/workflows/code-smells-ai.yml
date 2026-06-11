@@ -1,0 +1,64 @@
+name: Detectar code smells com IA
+
+on:
+  pull_request:
+    paths:
+      - "**/*.py"
+      - ".github/workflows/code-smells-ai.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  models: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v4
+
+      - name: Ler o codigo Python
+        id: code
+        shell: bash
+        run: |
+          {
+            echo "source_code<<PYTHON_CODE"
+            cat main.py
+            echo
+            echo "PYTHON_CODE"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Analisar code smells com IA
+        id: inference
+        uses: actions/ai-inference@v2
+        with:
+          model: openai/gpt-4o
+          max-completion-tokens: 1000
+          prompt: |
+            Analise o codigo Python abaixo e detecte pelo menos 2 code smells.
+
+            Considere especialmente:
+            - Long Method
+            - Duplicated Code
+            - Large Class
+            - Feature Envy
+            - Data Clumps
+
+            Para cada code smell encontrado, informe:
+            1. nome do code smell;
+            2. trecho ou local onde ele ocorre;
+            3. justificativa curta;
+            4. sugestao simples de refatoracao.
+
+            Nao invente problemas. Responda em portugues e em Markdown.
+
+            Codigo:
+            ```python
+            ${{ steps.code.outputs.source_code }}
+            ```
+
+      - name: Publicar resultado
+        shell: bash
+        run: cat "${{ steps.inference.outputs.response-file }}" >> "$GITHUB_STEP_SUMMARY"
